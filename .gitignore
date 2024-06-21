@@ -1,0 +1,19 @@
+# Ignore compiled Python files
+*.pyc
+*.pyo
+__pycache__/
+
+# Ignore the virtual environment
+venv/
+
+# Ignore IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Ignore system-specific files
+.DS_Store
+Thumbs.db
+
+/reports/*[!.gitkeep]
