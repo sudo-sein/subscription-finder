@@ -23,10 +23,23 @@ def escape_special_chars(text):
     return re.escape(text)
 
 def clean_amount(amount):
-    # Remove currency symbols and any non-numeric characters except for the minus sign and comma
-    amount = re.sub(r'[^\d,-]', '', amount)
-    # Replace comma with dot
-    amount = amount.replace(',', '.')
+    if not isinstance(amount, str):
+        return amount
+    # Remove currency symbols and any non-numeric characters except for the minus sign, comma, and dot
+    amount = re.sub(r'[^\d,.-]', '', amount)
+    
+    if ',' in amount and '.' in amount:
+        # If both are present, assume the last one is the decimal separator
+        if amount.rfind(',') > amount.rfind('.'):
+            # European format: 1.234,56 -> 1234.56
+            amount = amount.replace('.', '').replace(',', '.')
+        else:
+            # US format: 1,234.56 -> 1234.56
+            amount = amount.replace(',', '')
+    elif ',' in amount:
+        # Assume comma is decimal separator (European)
+        amount = amount.replace(',', '.')
+    
     return amount
 
 def map_columns_with_prefix_suffix(columns, standard_columns):
