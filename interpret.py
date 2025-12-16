@@ -82,12 +82,6 @@ def cluster_amounts(group, threshold):
     sorted_group = group.sort_values('Amount')
     amounts = sorted_group['Amount'].values
     
-    # Debug trace for Mortgage
-    is_mortgage = 'MORTGAGE' in str(group['Description'].iloc[0]) and args.debug
-    if is_mortgage:
-        print(f"DEBUG: Clustering 'MOVEMENT MORTGAGE'. Threshold: {threshold}")
-        print(f"DEBUG: Raw amounts: {amounts}")
-
     clusters = [] # List of [values]
     if len(amounts) > 0:
         current_cluster = [amounts[0]]
@@ -106,9 +100,6 @@ def cluster_amounts(group, threshold):
             # Calculate percentage difference
             diff = abs((val - ref) / ref)
             
-            if is_mortgage:
-                print(f"DEBUG: Comparing {val} to Ref {ref}. Diff: {diff:.4f} <= {threshold}?")
-
             if diff <= threshold:
                 current_cluster.append(val)
             else:
@@ -116,9 +107,6 @@ def cluster_amounts(group, threshold):
                 current_cluster = [val]
         clusters.append(current_cluster)
     
-    if is_mortgage:
-        print(f"DEBUG: Formed clusters: {clusters}")
-
     # Build a list of new amounts matching the sorted order
     new_amounts = []
     for cluster in clusters:
@@ -133,8 +121,19 @@ def get_subscription_candidates(df, groupby=['Description']):
         'Amount': ['count', 'sum', 'mean'],
         'Date': ['min', 'max']
     }).reset_index()
-    # Flatten columns: Description, count, sum, mean, min, max
-    subscription_candidates.columns = ['Description', 'Transaction_Count', 'Total_Spent', 'Amount', 'First_Transaction', 'Last_Transaction']
+    
+    # Flatten columns based on what groupby produced
+    # Columns are: GroupKey(s)..., Amount-count, Amount-sum, Amount-mean, Date-min, Date-max
+    if len(subscription_candidates.columns) == 7:
+        # Grouped by ['Description', 'Amount']
+        subscription_candidates.columns = ['Description', 'Amount', 'Transaction_Count', 'Total_Spent', 'Avg_Amount', 'First_Transaction', 'Last_Transaction']
+        # 'Amount' is the grouping key (exact cluster value), 'Avg_Amount' is the calculated mean (identical). 
+        # We can drop Avg_Amount.
+        subscription_candidates = subscription_candidates.drop(columns=['Avg_Amount'])
+    else:
+        # Grouped by ['Description']
+        subscription_candidates.columns = ['Description', 'Transaction_Count', 'Total_Spent', 'Amount', 'First_Transaction', 'Last_Transaction']
+        
     subscription_candidates = subscription_candidates[subscription_candidates['Transaction_Count'] > 1]
     return subscription_candidates
 
