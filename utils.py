@@ -3,8 +3,8 @@ import re
 
 standard_columns = {
     'Date': ['date', 'datum', 'fecha', 'data'],
-    'Description': ['description', 'desc', 'descripción', 'bezeichnung', 'opis'],
-    'Amount': ['amount', 'amt', 'importe', 'betrag', 'kwota', 'sum'],
+    'Description': ['description', 'desc', 'descripción', 'bezeichnung', 'opis', 'payee'],
+    'Amount': ['amount', 'amt', 'importe', 'betrag', 'kwota', 'sum', 'outflow',],
     # 'Category': ['category', 'kategorie', 'categoría', 'kategorie', 'kategoria'],
     # Add other standard columns and their variations
 }
