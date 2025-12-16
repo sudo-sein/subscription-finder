@@ -2,9 +2,16 @@ from utils import clean_amount, translate_column_names, unify_column_names, stan
 import sys
 import pandas as pd
 import numpy as np
+import argparse
 
-# Load the CSV file from first argument
-file_path = sys.argv[1]
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description='Analyze CSV for subscription candidates.')
+parser.add_argument('file_path', help='Path to the CSV file to analyze.')
+parser.add_argument('--threshold', '-t', type=float, default=0.15,
+                    help='Percentage threshold for clustering similar amounts (e.g., 0.15 for 15%%). Default is 0.15.')
+args = parser.parse_args()
+
+file_path = args.file_path
 
 def find_data_start(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -16,7 +23,7 @@ def find_data_start(file_path):
                 return i
     return None
 
-def cluster_amounts(group, threshold=0.10):
+def cluster_amounts(group, threshold):
     # group is a DataFrame subset (for one Description)
     # We want to return the group with 'Amount' updated to the cluster mean
     
@@ -111,7 +118,7 @@ if not df.empty:
     if not df.empty:
         # print("Columns before clustering:", df.columns.tolist())
         try:
-            df = df.groupby('Description', group_keys=False).apply(cluster_amounts)
+            df = df.groupby('Description', group_keys=False).apply(cluster_amounts, threshold=args.threshold)
         except Exception as e:
             print(f"Error during clustering: {e}")
             print("Columns:", df.columns.tolist())
