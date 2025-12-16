@@ -71,16 +71,16 @@ def merge_similar_descriptions(df, threshold=0.7):
     df['Description'] = df['Description'].map(mapping)
     return df
 
-def cluster_amounts(group, threshold):
-    # group is a DataFrame subset (for one Description)
-    # We want to return the group with 'Amount' updated to the cluster mean
+def _cluster_amounts_series(s_amounts, threshold):
+    # s_amounts is a Series of amounts for a single Description group
     
-    if len(group) < 2:
-        return group
+    if len(s_amounts) < 2:
+        return s_amounts # Return original Series if not enough to cluster
         
     # Sort by Amount to ensure deterministic processing
-    sorted_group = group.sort_values('Amount')
-    amounts = sorted_group['Amount'].values
+    # Important: Operate on values, but preserve original index for returning Series
+    amounts = s_amounts.sort_values().values
+    original_index = s_amounts.sort_values().index
     
     clusters = [] # List of [values]
     if len(amounts) > 0:
@@ -108,13 +108,15 @@ def cluster_amounts(group, threshold):
         clusters.append(current_cluster)
     
     # Build a list of new amounts matching the sorted order
-    new_amounts = []
+    new_amounts_list = []
     for cluster in clusters:
         mean_val = np.mean(cluster)
-        new_amounts.extend([mean_val] * len(cluster))
+        new_amounts_list.extend([mean_val] * len(cluster))
         
-    sorted_group['Amount'] = new_amounts
-    return sorted_group
+    # Create a Series with the new amounts, aligned to the original index
+    # We sorted amounts, so we must re-align with original_index
+    clustered_series = pd.Series(new_amounts_list, index=original_index)
+    return clustered_series.reindex(s_amounts.index) # Reindex to original Series order
 
 def get_subscription_candidates(df, groupby=['Description']):
     subscription_candidates = df.groupby(groupby).agg({
@@ -184,7 +186,7 @@ if not df.empty:
     # Cluster amounts within each Description group to isolate outliers
     if not df.empty:
         try:
-            df = df.groupby('Description', group_keys=False).apply(cluster_amounts, threshold=args.threshold)
+            df['Amount'] = df.groupby('Description')['Amount'].transform(_cluster_amounts_series, threshold=args.threshold)
         except Exception as e:
             if args.debug:
                 print(f"Error during amount clustering: {e}")
