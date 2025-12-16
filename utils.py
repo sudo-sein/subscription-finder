@@ -78,17 +78,6 @@ def normalize_description(desc):
     # Remove "Transfer : " prefix
     desc = re.sub(r'^TRANSFER\s*:\s*', '', desc)
     
-    # Specific fix for "MDC*TALQUIN"
-    if "MDC*TALQUIN" in desc:
-        return "MDC TALQUIN"
-    
-    # Specific fix for "Paul's Termite"
-    if "PAUL" in desc and "TERMITE" in desc:
-        return "PAUL'S TERMITE"
-        
-    if "TRUIST" in desc:
-        return "TRUIST"
-    
     # Generic cleanup
     # Remove location info like ", FL, USA"
     desc = re.sub(r',\s*[A-Z]{2}(?:,\s*USA)?.*$', '', desc)
