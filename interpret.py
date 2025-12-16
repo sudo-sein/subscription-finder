@@ -114,7 +114,7 @@ def cluster_amounts(group, threshold):
         new_amounts.extend([mean_val] * len(cluster))
         
     sorted_group['Amount'] = new_amounts
-    return sorted_group['Amount']
+    return sorted_group
 
 def get_subscription_candidates(df, groupby=['Description']):
     subscription_candidates = df.groupby(groupby).agg({
