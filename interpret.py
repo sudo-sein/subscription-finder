@@ -1,4 +1,4 @@
-from utils import clean_amount, translate_column_names, unify_column_names, standard_columns
+from utils import clean_amount, translate_column_names, unify_column_names, standard_columns, normalize_description
 import sys
 import pandas as pd
 import numpy as np
@@ -23,57 +23,13 @@ def find_data_start(file_path):
                 return i
     return None
 
-def cluster_amounts(group, threshold):
-    # group is a DataFrame subset (for one Description)
-    # We want to return the group with 'Amount' updated to the cluster mean
-    
-    if len(group) < 2:
-        return group
-        
-    # Sort by Amount to ensure deterministic processing
-    sorted_group = group.sort_values('Amount')
-    amounts = sorted_group['Amount'].values
-    
-    clusters = [] # List of [values]
-    if len(amounts) > 0:
-        current_cluster = [amounts[0]]
-        
-        for val in amounts[1:]:
-            ref = current_cluster[0]
-            # Avoid division by zero
-            if ref == 0:
-                if val == 0:
-                    current_cluster.append(val)
-                else:
-                    clusters.append(current_cluster)
-                    current_cluster = [val]
-                continue
-            
-            # Calculate percentage difference
-            diff = abs((val - ref) / ref)
-            
-            if diff <= threshold:
-                current_cluster.append(val)
-            else:
-                clusters.append(current_cluster)
-                current_cluster = [val]
-        clusters.append(current_cluster)
-    
-    # Build a list of new amounts matching the sorted order
-    new_amounts = []
-    for cluster in clusters:
-        mean_val = np.mean(cluster)
-        new_amounts.extend([mean_val] * len(cluster))
-        
-    sorted_group['Amount'] = new_amounts
-    return sorted_group
-
-def get_subscription_candidates(df, groupby=['Description', 'Amount']):
+def get_subscription_candidates(df, groupby=['Description']):
     subscription_candidates = df.groupby(groupby).agg({
-        'Amount': ['count', 'sum'],
+        'Amount': ['count', 'sum', 'mean'],
         'Date': ['min', 'max']
     }).reset_index()
-    subscription_candidates.columns = ['Description', 'Amount', 'Transaction_Count', 'Total_Spent', 'First_Transaction', 'Last_Transaction']
+    # Flatten columns: Description, count, sum, mean, min, max
+    subscription_candidates.columns = ['Description', 'Transaction_Count', 'Total_Spent', 'Amount', 'First_Transaction', 'Last_Transaction']
     subscription_candidates = subscription_candidates[subscription_candidates['Transaction_Count'] > 1]
     return subscription_candidates
 
@@ -113,18 +69,11 @@ if not df.empty:
 
     # Example: Handle missing values
     df.dropna(subset=['Description', 'Amount'], inplace=True)
+    
+    # Normalize descriptions
+    df['Description'] = df['Description'].apply(normalize_description)
 
-    # Cluster amounts within each Description group to combine similar subscriptions
-    if not df.empty:
-        # print("Columns before clustering:", df.columns.tolist())
-        try:
-            df = df.groupby('Description', group_keys=False).apply(cluster_amounts, threshold=args.threshold)
-        except Exception as e:
-            print(f"Error during clustering: {e}")
-            print("Columns:", df.columns.tolist())
-            exit(1)
-
-    subscription_candidates = get_subscription_candidates(df, groupby=['Description', 'Amount'])
+    subscription_candidates = get_subscription_candidates(df, groupby=['Description'])
     subscription_candidates['First_Transaction'] = pd.to_datetime(subscription_candidates['First_Transaction'])
     subscription_candidates['Last_Transaction'] = pd.to_datetime(subscription_candidates['Last_Transaction'])
     subscription_candidates['Total_Days'] = (subscription_candidates['Last_Transaction'] - subscription_candidates['First_Transaction']).dt.days

@@ -67,3 +67,33 @@ def unify_column_names(df, standard_columns):
     column_mapping = map_columns_with_prefix_suffix(df.columns, standard_columns)
     df.rename(columns=column_mapping, inplace=True)
     return df
+
+def normalize_description(desc):
+    if not isinstance(desc, str):
+        return desc
+    
+    # Uppercase
+    desc = desc.upper()
+    
+    # Remove "Transfer : " prefix
+    desc = re.sub(r'^TRANSFER\s*:\s*', '', desc)
+    
+    # Specific fix for "MDC*TALQUIN"
+    if "MDC*TALQUIN" in desc:
+        return "MDC TALQUIN"
+    
+    # Specific fix for "Paul's Termite"
+    if "PAUL" in desc and "TERMITE" in desc:
+        return "PAUL'S TERMITE"
+        
+    if "TRUIST" in desc:
+        return "TRUIST"
+    
+    # Generic cleanup
+    # Remove location info like ", FL, USA"
+    desc = re.sub(r',\s*[A-Z]{2}(?:,\s*USA)?.*$', '', desc)
+    
+    desc = re.sub(r'[^\w\s]', ' ', desc) # Replace special chars with space
+    desc = re.sub(r'\s+', ' ', desc).strip()
+    
+    return desc
