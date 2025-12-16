@@ -16,4 +16,4 @@ venv/
 .DS_Store
 Thumbs.db
 
-/reports/*[!.gitkeep]
+/reports/*[!.gitkeep]ignore_subscriptions.txt

@@ -183,6 +183,10 @@ if not df.empty:
     # Merge similar descriptions (fuzzy matching)
     df = merge_similar_descriptions(df)
 
+    # Load ignore patterns and filter
+    ignore_patterns = load_ignore_patterns(args.ignore_file)
+    df = filter_ignored_vendors(df, ignore_patterns)
+
     # Cluster amounts within each Description group to isolate outliers
     if not df.empty:
         try:
