@@ -18,6 +18,8 @@ parser.add_argument('--min-transaction-amount', type=float, default=10.0,
                     help='Minimum absolute transaction amount to consider for a subscription. Default is 10.0.')
 parser.add_argument('--max-transaction-amount', type=float, default=10000.0,
                     help='Maximum absolute transaction amount to consider for a subscription. Default is 10000.0 (i.e., $10,000).')
+parser.add_argument('--ignore-file', type=str, default='ignore_subscriptions.txt',
+                    help='Path to a file containing vendor names to ignore (one per line).')
 args = parser.parse_args()
 
 file_path = args.file_path
