@@ -89,7 +89,9 @@ if not df.empty:
     print("Number of potential subscriptions:", len(subscription_candidates))
     
     # Display potential subscriptions
-    print(subscription_candidates[['Description', 'Amount', 'Yearly_Cost', 'Last_Transaction', 'Transaction_Count']].sort_values('Yearly_Cost', ascending=True))
+    output_df = subscription_candidates[['Description', 'Amount', 'Yearly_Cost', 'Last_Transaction', 'Transaction_Count']].copy()
+    output_df = output_df.sort_values('Yearly_Cost', ascending=True)
+    print(output_df.to_string(float_format="{:.2f}".format))
 else:
     print("Dataframe is empty.")
 # print(df.head())
