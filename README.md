@@ -31,6 +31,18 @@ To set up the project, follow these steps:
    pip install -r requirements.txt
    ```
 
+## CSV File Format
+
+The script expects a CSV file containing transaction data. It automatically identifies and maps column headers to standard names, supporting various linguistic and formatting differences.
+
+The essential columns and their recognized variations are:
+
+- **Date**: (`date`, `datum`, `fecha`, `data`) - The date of the transaction.
+- **Description**: (`description`, `desc`, `descripción`, `bezeichnung`, `opis`, `payee`) - A textual description of the transaction or vendor.
+- **Amount**: (`amount`, `amt`, `importe`, `betrag`, `kwota`, `sum`, `outflow`) - The transaction amount. Note: the script handles currency symbols and different decimal/thousands separators.
+
+The script also supports automatic language detection for column headers and will translate them to English before processing.
+
 ## Usage
 
 To use the script, run the following command:
