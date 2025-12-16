@@ -79,6 +79,7 @@ def merge_similar_descriptions(df, threshold=0.7):
     """
     Groups similar descriptions using fuzzy matching and prefix checking.
     Prioritizes shorter names as representatives (e.g., "TRUIST" over "TRUIST LN...").
+    Optimized with first-char bucketing and length heuristics.
     """
     if df.empty:
         return df
@@ -88,11 +89,20 @@ def merge_similar_descriptions(df, threshold=0.7):
     sorted_descs = sorted(unique_descs, key=len)
     
     mapping = {}
-    reps = []
+    # Partition reps by their starting character for O(N^2/C) speedup
+    reps_by_char = {}
     
     for desc in sorted_descs:
         match = None
-        for rep in reps:
+        if not desc:
+            continue
+            
+        first_char = desc[0]
+        
+        # Only check against reps starting with the same character
+        potential_reps = reps_by_char.get(first_char, [])
+        
+        for rep in potential_reps:
             # Check 1: Prefix match (strong signal)
             # e.g., "TRUIST" matches "TRUIST LN..."
             if desc.startswith(rep + " "):
@@ -100,6 +110,13 @@ def merge_similar_descriptions(df, threshold=0.7):
                 break
             
             # Check 2: Fuzzy match
+            # Optimization: Quick length check
+            # ratio = 2*M / (len(a) + len(b)). Max M = len(rep) (since rep is shorter/equal)
+            # If max possible ratio <= threshold, skip expensive difflib
+            max_possible_ratio = 2 * len(rep) / (len(rep) + len(desc))
+            if max_possible_ratio <= threshold:
+                continue
+
             ratio = difflib.SequenceMatcher(None, rep, desc).ratio()
             if ratio > threshold:
                 match = rep
@@ -108,7 +125,9 @@ def merge_similar_descriptions(df, threshold=0.7):
         if match:
             mapping[desc] = match
         else:
-            reps.append(desc)
+            if first_char not in reps_by_char:
+                reps_by_char[first_char] = []
+            reps_by_char[first_char].append(desc)
             mapping[desc] = desc
             
     df['Description'] = df['Description'].map(mapping)
