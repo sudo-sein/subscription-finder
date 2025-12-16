@@ -11,6 +11,8 @@ parser.add_argument('--threshold', '-t', type=float, default=0.15,
                     help='Percentage threshold for clustering similar amounts (e.g., 0.15 for 15%%). Default is 0.15.')
 parser.add_argument('--recency-days', '-r', type=int, default=90,
                     help='Number of days from the latest transaction to consider a subscription active. Default is 90 days.')
+parser.add_argument('--debug', '-d', action='store_true',
+                    help='Enable debug mode to show verbose output.')
 args = parser.parse_args()
 
 file_path = args.file_path
@@ -37,7 +39,8 @@ def get_subscription_candidates(df, groupby=['Description']):
 
 
 start_row = find_data_start(file_path)
-print(f"Offseting by {start_row} rows.")
+if args.debug:
+    print(f"Offseting by {start_row} rows.")
 
 if start_row is not None:
     df = pd.read_csv(file_path, skiprows=start_row, sep=',', index_col=False,)
@@ -74,6 +77,9 @@ if not df.empty:
     
     # Normalize descriptions
     df['Description'] = df['Description'].apply(normalize_description)
+
+    # Merge similar descriptions (fuzzy matching)
+    df = merge_similar_descriptions(df)
 
     subscription_candidates = get_subscription_candidates(df, groupby=['Description'])
     subscription_candidates['First_Transaction'] = pd.to_datetime(subscription_candidates['First_Transaction'])
