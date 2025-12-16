@@ -72,10 +72,13 @@ if not df.empty:
     
     subscription_candidates = subscription_candidates[(subscription_candidates['Amount'] < -10) & (subscription_candidates['Amount'] > -1000)]
     
+    # Calculate yearly cost
+    subscription_candidates['Yearly_Cost'] = subscription_candidates['Amount'] * 12
+
     print("Number of potential subscriptions:", len(subscription_candidates))
     
     # Display potential subscriptions
-    print(subscription_candidates[['Description', 'Amount', 'Last_Transaction', 'Transaction_Count']].sort_values('Last_Transaction', ascending=False))
+    print(subscription_candidates[['Description', 'Amount', 'Yearly_Cost', 'Last_Transaction', 'Transaction_Count']].sort_values('Yearly_Cost', ascending=True))
 else:
     print("Dataframe is empty.")
 # print(df.head())
