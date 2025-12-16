@@ -79,7 +79,7 @@ def merge_similar_descriptions(df, threshold=0.7):
     """
     Groups similar descriptions using fuzzy matching and prefix checking.
     Prioritizes shorter names as representatives (e.g., "TRUIST" over "TRUIST LN...").
-    Optimized with first-char bucketing and length heuristics.
+    Optimized with length heuristics.
     """
     if df.empty:
         return df
@@ -89,20 +89,14 @@ def merge_similar_descriptions(df, threshold=0.7):
     sorted_descs = sorted(unique_descs, key=len)
     
     mapping = {}
-    # Partition reps by their starting character for O(N^2/C) speedup
-    reps_by_char = {}
+    reps = []
     
     for desc in sorted_descs:
         match = None
         if not desc:
             continue
             
-        first_char = desc[0]
-        
-        # Only check against reps starting with the same character
-        potential_reps = reps_by_char.get(first_char, [])
-        
-        for rep in potential_reps:
+        for rep in reps:
             # Check 1: Prefix match (strong signal)
             # e.g., "TRUIST" matches "TRUIST LN..."
             if desc.startswith(rep + " "):
@@ -125,9 +119,7 @@ def merge_similar_descriptions(df, threshold=0.7):
         if match:
             mapping[desc] = match
         else:
-            if first_char not in reps_by_char:
-                reps_by_char[first_char] = []
-            reps_by_char[first_char].append(desc)
+            reps.append(desc)
             mapping[desc] = desc
             
     df['Description'] = df['Description'].map(mapping)
