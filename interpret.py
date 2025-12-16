@@ -82,6 +82,12 @@ def cluster_amounts(group, threshold):
     sorted_group = group.sort_values('Amount')
     amounts = sorted_group['Amount'].values
     
+    # Debug trace for Mortgage
+    is_mortgage = 'MORTGAGE' in str(group['Description'].iloc[0]) and args.debug
+    if is_mortgage:
+        print(f"DEBUG: Clustering 'MOVEMENT MORTGAGE'. Threshold: {threshold}")
+        print(f"DEBUG: Raw amounts: {amounts}")
+
     clusters = [] # List of [values]
     if len(amounts) > 0:
         current_cluster = [amounts[0]]
@@ -100,6 +106,9 @@ def cluster_amounts(group, threshold):
             # Calculate percentage difference
             diff = abs((val - ref) / ref)
             
+            if is_mortgage:
+                print(f"DEBUG: Comparing {val} to Ref {ref}. Diff: {diff:.4f} <= {threshold}?")
+
             if diff <= threshold:
                 current_cluster.append(val)
             else:
@@ -107,6 +116,9 @@ def cluster_amounts(group, threshold):
                 current_cluster = [val]
         clusters.append(current_cluster)
     
+    if is_mortgage:
+        print(f"DEBUG: Formed clusters: {clusters}")
+
     # Build a list of new amounts matching the sorted order
     new_amounts = []
     for cluster in clusters:
