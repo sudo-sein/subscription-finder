@@ -3,6 +3,7 @@ import sys
 import pandas as pd
 import numpy as np
 import argparse
+import difflib
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='Analyze CSV for subscription candidates.')
@@ -26,6 +27,45 @@ def find_data_start(file_path):
                 any(kw in line_lower for kw in standard_columns['Amount'])):
                 return i
     return None
+
+def merge_similar_descriptions(df, threshold=0.7):
+    """
+    Groups similar descriptions using fuzzy matching and prefix checking.
+    Prioritizes shorter names as representatives (e.g., "TRUIST" over "TRUIST LN...").
+    """
+    if df.empty:
+        return df
+
+    unique_descs = df['Description'].dropna().unique()
+    # Sort by length (shortest first) to prefer simpler names as representatives
+    sorted_descs = sorted(unique_descs, key=len)
+    
+    mapping = {}
+    reps = []
+    
+    for desc in sorted_descs:
+        match = None
+        for rep in reps:
+            # Check 1: Prefix match (strong signal)
+            # e.g., "TRUIST" matches "TRUIST LN..."
+            if desc.startswith(rep + " "):
+                match = rep
+                break
+            
+            # Check 2: Fuzzy match
+            ratio = difflib.SequenceMatcher(None, rep, desc).ratio()
+            if ratio > threshold:
+                match = rep
+                break
+        
+        if match:
+            mapping[desc] = match
+        else:
+            reps.append(desc)
+            mapping[desc] = desc
+            
+    df['Description'] = df['Description'].map(mapping)
+    return df
 
 def get_subscription_candidates(df, groupby=['Description']):
     subscription_candidates = df.groupby(groupby).agg({
