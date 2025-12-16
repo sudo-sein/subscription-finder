@@ -22,6 +22,47 @@ args = parser.parse_args()
 
 file_path = args.file_path
 
+def load_ignore_patterns(ignore_file_path):
+    patterns = []
+    try:
+        with open(ignore_file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    # Normalize the pattern just like we normalize descriptions
+                    # This ensures "kroger" matches "KROGER"
+                    patterns.append(normalize_description(line))
+    except FileNotFoundError:
+        pass # It's okay if the file doesn't exist
+    return patterns
+
+def filter_ignored_vendors(df, ignore_patterns):
+    if not ignore_patterns:
+        return df
+    
+    initial_count = len(df)
+    
+    # We want to drop rows where the Description contains any of the ignore patterns
+    # Since descriptions are already normalized, we check for substring existence
+    
+    import re
+    # patterns are already normalized (UPPERCASE, etc). 
+    escaped_patterns = [re.escape(p) for p in ignore_patterns]
+    full_pattern = '|'.join(escaped_patterns)
+    
+    if not full_pattern:
+        return df
+
+    # Filter: Keep rows where Description DOES NOT contain the pattern
+    # Use str.contains with regex=True
+    df_filtered = df[~df['Description'].str.contains(full_pattern, case=True, regex=True)]
+    
+    removed_count = initial_count - len(df_filtered)
+    if args.debug and removed_count > 0:
+        print(f"Ignored {removed_count} transactions matching {len(ignore_patterns)} patterns from '{args.ignore_file}'.")
+        
+    return df_filtered
+
 def find_data_start(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
         for i, line in enumerate(file):
