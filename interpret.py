@@ -31,6 +31,9 @@ if start_row is not None:
     df = pd.read_csv(file_path, skiprows=start_row, sep=';', index_col=False,)
 else:
     print("No valid data header found in the file.")
+    print(start_row)
+    print("Exiting.")
+    exit(1)
     
 # Example: Translate column names
 if not df.empty:
