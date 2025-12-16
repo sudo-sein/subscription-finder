@@ -14,6 +14,10 @@ parser.add_argument('--recency-days', '-r', type=int, default=90,
                     help='Number of days from the latest transaction to consider a subscription active. Default is 90 days.')
 parser.add_argument('--debug', '-d', action='store_true',
                     help='Enable debug mode to show verbose output.')
+parser.add_argument('--min-transaction-amount', type=float, default=10.0,
+                    help='Minimum absolute transaction amount to consider for a subscription. Default is 10.0.')
+parser.add_argument('--max-transaction-amount', type=float, default=10000.0,
+                    help='Maximum absolute transaction amount to consider for a subscription. Default is 10000.0 (i.e., $10,000).')
 args = parser.parse_args()
 
 file_path = args.file_path
@@ -129,7 +133,10 @@ if not df.empty:
     
     subscription_candidates = subscription_candidates[(subscription_candidates['Avg_Days_Between_Transactions'] > 25) & (subscription_candidates['Avg_Days_Between_Transactions'] < 35)]
     
-    subscription_candidates = subscription_candidates[(subscription_candidates['Amount'] < -10) & (subscription_candidates['Amount'] > -1000)]
+    subscription_candidates = subscription_candidates[
+        (subscription_candidates['Amount'] < -args.min_transaction_amount) & 
+        (subscription_candidates['Amount'] > -args.max_transaction_amount)
+    ]
     
     # Calculate yearly cost
     subscription_candidates['Yearly_Cost'] = subscription_candidates['Amount'] * 12
