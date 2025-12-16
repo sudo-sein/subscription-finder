@@ -17,3 +17,8 @@ venv/
 Thumbs.db
 
 /reports/*[!.gitkeep]ignore_subscriptions.txt
+
+# ignore customized ignores file
+!ignore_subscriptions.example.txt
+ignore_subscriptions.txt
+
