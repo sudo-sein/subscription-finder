@@ -3,8 +3,8 @@ import re
 
 standard_columns = {
     'Date': ['date', 'datum', 'fecha', 'data'],
-    'Description': ['description', 'desc', 'descripción', 'bezeichnung', 'opis'],
-    'Amount': ['amount', 'amt', 'importe', 'betrag', 'kwota', 'sum'],
+    'Description': ['description', 'desc', 'descripción', 'bezeichnung', 'opis', 'payee'],
+    'Amount': ['amount', 'amt', 'importe', 'betrag', 'kwota', 'sum', 'outflow',],
     # 'Category': ['category', 'kategorie', 'categoría', 'kategorie', 'kategoria'],
     # Add other standard columns and their variations
 }
@@ -23,10 +23,23 @@ def escape_special_chars(text):
     return re.escape(text)
 
 def clean_amount(amount):
-    # Remove currency symbols and any non-numeric characters except for the minus sign and comma
-    amount = re.sub(r'[^\d,-]', '', amount)
-    # Replace comma with dot
-    amount = amount.replace(',', '.')
+    if not isinstance(amount, str):
+        return amount
+    # Remove currency symbols and any non-numeric characters except for the minus sign, comma, and dot
+    amount = re.sub(r'[^\d,.-]', '', amount)
+    
+    if ',' in amount and '.' in amount:
+        # If both are present, assume the last one is the decimal separator
+        if amount.rfind(',') > amount.rfind('.'):
+            # European format: 1.234,56 -> 1234.56
+            amount = amount.replace('.', '').replace(',', '.')
+        else:
+            # US format: 1,234.56 -> 1234.56
+            amount = amount.replace(',', '')
+    elif ',' in amount:
+        # Assume comma is decimal separator (European)
+        amount = amount.replace(',', '.')
+    
     return amount
 
 def map_columns_with_prefix_suffix(columns, standard_columns):
@@ -54,3 +67,22 @@ def unify_column_names(df, standard_columns):
     column_mapping = map_columns_with_prefix_suffix(df.columns, standard_columns)
     df.rename(columns=column_mapping, inplace=True)
     return df
+
+def normalize_description(desc):
+    if not isinstance(desc, str):
+        return desc
+    
+    # Uppercase
+    desc = desc.upper()
+    
+    # Remove "Transfer : " prefix
+    desc = re.sub(r'^TRANSFER\s*:\s*', '', desc)
+    
+    # Generic cleanup
+    # Remove location info like ", FL, USA"
+    desc = re.sub(r',\s*[A-Z]{2}(?:,\s*USA)?.*$', '', desc)
+    
+    desc = re.sub(r'[^\w\s]', ' ', desc) # Replace special chars with space
+    desc = re.sub(r'\s+', ' ', desc).strip()
+    
+    return desc

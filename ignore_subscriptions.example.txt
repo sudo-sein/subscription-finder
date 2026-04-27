@@ -1,0 +1,8 @@
+# Add exact or partial vendor names to ignore (case-insensitive)
+# One entry per line
+Whole Foods
+Trader Joe's
+Safeway
+Publix
+Walmart
+Target
